@@ -6,6 +6,7 @@ on:
       - main
   workflow_dispatch:
 
+# Allow only one concurrent deployment
 permissions:
   contents: read
   pages: write
@@ -23,7 +24,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -37,21 +38,32 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Build
+      - name: Build React app
         working-directory: ./frontend
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://your-backend-url.com/api' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:5000/api' }}
           GITHUB_PAGES: 'true'
+          NODE_ENV: 'production'
         run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "frontend/dist" ]; then
+            echo "Error: dist folder not found!"
+            exit 1
+          fi
+          if [ ! -f "frontend/dist/index.html" ]; then
+            echo "Error: index.html not found!"
+            exit 1
+          fi
+          echo "✅ Build output verified"
+          ls -la frontend/dist/
 
       - name: Fix 404 for SPA routing
         run: cp frontend/dist/index.html frontend/dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      
-      - name: List build files
-        run: ls -la frontend/dist/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

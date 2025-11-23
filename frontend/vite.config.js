@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Base path untuk GitHub Pages
+const base = process.env.NODE_ENV === 'production' && process.env.GITHUB_PAGES === 'true' 
+  ? '/BEM-FSRD-ISIYK/' 
+  : '/'
+
 export default defineConfig({
+  base: base,
   plugins: [react()],
   server: {
     port: 3000,

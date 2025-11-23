@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: bem-fsrd-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GITHUB_PAGES
+        value: 'false'
+      - key: VITE_API_URL
+        sync: false
+        # Set this in Render dashboard
+        # Example: https://your-backend-url.com/api
+

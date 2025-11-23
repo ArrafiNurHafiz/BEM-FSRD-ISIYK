@@ -25,7 +25,8 @@
     "build:prod": "NODE_ENV=production vite build",
     "preview": "vite preview",
     "start": "vite",
-    "prod:build": "./build-production.sh"
+    "prod:build": "./build-production.sh",
+    "serve": "serve dist -s -l 3000"
   }
 }
 

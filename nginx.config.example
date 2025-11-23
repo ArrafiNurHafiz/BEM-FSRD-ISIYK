@@ -1,0 +1,146 @@
+# Nginx Configuration untuk Website BEM FSRD ISI Yogyakarta
+# Copy konfigurasi ini ke /etc/nginx/sites-available/bem-fsrd
+# Atau gunakan sebagai referensi untuk setup Nginx
+
+# Frontend - Serve React App
+server {
+    listen 80;
+    listen [::]:80; # IPv6
+    
+    # Ganti dengan domain Anda atau IP server
+    server_name your-domain.com www.your-domain.com;
+    # Atau gunakan IP: server_name 123.456.789.0;
+    
+    # Root directory untuk frontend build files
+    root /var/www/bem-fsrd;
+    index index.html;
+
+    # Character encoding
+    charset utf-8;
+
+    # Logging
+    access_log /var/log/nginx/bem-fsrd-access.log;
+    error_log /var/log/nginx/bem-fsrd-error.log;
+
+    # Gzip compression untuk performa lebih baik
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_comp_level 6;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/x-javascript
+        application/xml+rss
+        application/json
+        application/javascript
+        image/svg+xml;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # Serve static files (React Router - SPA)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets (JS, CSS, images, fonts)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # API Proxy - Forward ke backend Node.js
+    location /api {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        
+        # WebSocket support (jika diperlukan)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        
+        # Headers untuk proper forwarding
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Disable buffering untuk streaming response
+        proxy_buffering off;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Upload files - Serve dari backend
+    location /uploads {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Cache uploaded files (optional)
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Deny access to backup files
+    location ~ ~$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+}
+
+# HTTPS Configuration (setelah setup SSL dengan Certbot)
+# Certbot akan otomatis menambahkan konfigurasi HTTPS ini
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     
+#     server_name your-domain.com www.your-domain.com;
+#     
+#     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+#     ssl_trusted_certificate /etc/letsencrypt/live/your-domain.com/chain.pem;
+#     
+#     # SSL Configuration (akan ditambahkan oleh Certbot)
+#     # include /etc/letsencrypt/options-ssl-nginx.conf;
+#     # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+#     
+#     # (Copy semua konfigurasi dari block server di atas)
+# }
+
+# Redirect HTTP to HTTPS (setelah setup SSL)
+# server {
+#     listen 80;
+#     listen [::]:80;
+#     server_name your-domain.com www.your-domain.com;
+#     return 301 https://$server_name$request_uri;
+# }
+
+# Usage:
+# 1. Copy file ini ke /etc/nginx/sites-available/bem-fsrd
+# 2. Edit dan sesuaikan dengan konfigurasi server Anda
+# 3. Create symlink: sudo ln -s /etc/nginx/sites-available/bem-fsrd /etc/nginx/sites-enabled/
+# 4. Test configuration: sudo nginx -t
+# 5. Reload Nginx: sudo systemctl reload nginx
+

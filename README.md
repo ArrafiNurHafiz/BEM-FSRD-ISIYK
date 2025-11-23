@@ -684,7 +684,7 @@ MIT License
 
 ## 👥 Kontributor
 
-BEM FSRD Institut Seni Indonesia Yogyakarta
+Arrafi Nur Hafiz
 
 ---
 
